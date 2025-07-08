@@ -1,6 +1,7 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Unit } from "./unit";
 
 interface Course {
   id: number;
@@ -34,26 +35,35 @@ export const Units = ({
   units,
   activeCourse
 }: UnitsProps) => {
+  // Sort units by order
+  const sortedUnits = [...units].sort((a, b) => a.order - b.order);
+  
+  // Find the first incomplete lesson or default to the first lesson of the first unit
+  const firstIncompleteLesson = sortedUnits.flatMap(unit => 
+    unit.lessons.find(lesson => !lesson.completed)
+  )[0] || sortedUnits[0]?.lessons[0];
+  
+  // In a real implementation, this would be fetched from the server
+  // We're using a fixed value for simplicity
+  const [activeLessonPercentage, setActiveLessonPercentage] = useState(0);
+
   return (
-    <div className="space-y-8">
-      {units.map((unit) => (
-        <Card key={unit.id} className="p-6">
-          <h2 className="text-xl font-bold mb-4">{unit.title}</h2>
-          <p className="text-muted-foreground mb-4">{unit.description}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {unit.lessons.map((lesson) => (
-              <Card 
-                key={lesson.id} 
-                className={`p-4 border-2 ${lesson.completed ? "border-green-500" : "border-slate-200"}`}
-              >
-                <h3 className="font-medium">{lesson.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {lesson.completed ? "Completed" : "Not completed"}
-                </p>
-              </Card>
-            ))}
-          </div>
-        </Card>
+    <div>
+      {sortedUnits.map((unit) => (
+        <div key={unit.id} className="mb-10">
+          <Unit 
+            id={unit.id}
+            order={unit.order}
+            title={unit.title}
+            description={unit.description}
+            lessons={unit.lessons}
+            activeLesson={firstIncompleteLesson ? {
+              ...firstIncompleteLesson,
+              unit: unit
+            } : undefined}
+            activeLessonPercentage={activeLessonPercentage}
+          />
+        </div>
       ))}
     </div>
   );

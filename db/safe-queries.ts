@@ -125,6 +125,65 @@ export const getUnits = cache(async () => {
   }
 });
 
+// Safe version of getCourseProgress with error handling
+export const getCourseProgress = cache(async () => {
+  try {
+    const userProgress = await getUserProgress();
+    
+    if (!userProgress || !userProgress.activeCourseId) {
+      return null;
+    }
+    
+    // Find the first incomplete lesson
+    const units = await getUnits();
+    const firstIncompleteLesson = units
+      .flatMap(unit => unit.lessons)
+      .find(lesson => !lesson.completed);
+      
+    return {
+      activeLesson: firstIncompleteLesson,
+      activeLessonId: firstIncompleteLesson?.id || 1,
+    };
+  } catch (error) {
+    console.error("Error fetching course progress:", error);
+    return {
+      activeLesson: null,
+      activeLessonId: 1
+    };
+  }
+});
+
+// Safe version of getLessonPercentage with error handling
+export const getLessonPercentage = cache(async () => {
+  try {
+    const courseProgress = await getCourseProgress();
+
+    if (!courseProgress?.activeLessonId) {
+      return 0;
+    }
+
+    const lesson = await getLesson(courseProgress.activeLessonId);
+
+    if (!lesson) {
+      return 0;
+    }
+
+    // Calculate percentage based on completed challenges
+    const completedChallenges = lesson.challenges.filter(challenge => 
+      challenge.completed === true
+    );
+    
+    const percentage = Math.round(
+      (completedChallenges.length / lesson.challenges.length) * 100
+    );
+
+    return percentage;
+  } catch (error) {
+    console.error("Error calculating lesson percentage:", error);
+    return 0;
+  }
+});
+
 // Safe version of getCourses with error handling
 export const getCourses = cache(async () => {
   try {
@@ -170,18 +229,39 @@ export const getCourse = cache(async (courseId: number) => {
 // Safe version of getLesson with error handling
 export const getLesson = cache(async (lessonId: number) => {
   try {
+    const { userId } = await getServerAuth();
+    
+    if (!userId) {
+      return null;
+    }
+    
     const data = await db.query.lessons.findFirst({
       where: eq(lessons.id, lessonId),
       with: {
         challenges: {
           with: {
             challengeOptions: true,
+            challengeProgress: {
+              where: eq(challengeProgress.userId, userId),
+            },
           },
         },
       },
     });
     
-    return data;
+    if (!data || !data.challenges) {
+      return null;
+    }
+
+    const normalizedChallenges = data.challenges.map((challenge) => {
+      const completed = challenge.challengeProgress 
+        && challenge.challengeProgress.length > 0
+        && challenge.challengeProgress.every((progress) => progress.completed);
+
+      return { ...challenge, completed };
+    });
+
+    return { ...data, challenges: normalizedChallenges };
   } catch (error) {
     console.error(`Error fetching lesson ${lessonId}:`, error);
     // Return mock lesson data
@@ -197,6 +277,7 @@ export const getLesson = cache(async (lessonId: number) => {
           type: "SELECT",
           question: "Sample Question",
           order: 1,
+          completed: false,
           challengeOptions: [
             {
               id: 1,
