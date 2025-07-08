@@ -114,9 +114,95 @@ export const getUnits = cache(async () => {
         lessons: [
           {
             id: 1,
-            title: "Lesson 1",
+            title: "Greetings",
             unitId: 1,
             order: 1,
+            completed: true
+          },
+          {
+            id: 2,
+            title: "Introductions",
+            unitId: 1,
+            order: 2,
+            completed: true
+          },
+          {
+            id: 3,
+            title: "Basic Phrases",
+            unitId: 1,
+            order: 3,
+            completed: false
+          },
+          {
+            id: 4,
+            title: "Numbers",
+            unitId: 1,
+            order: 4,
+            completed: false
+          },
+          {
+            id: 5,
+            title: "Colors",
+            unitId: 1,
+            order: 5,
+            completed: false
+          },
+          {
+            id: 6,
+            title: "Family",
+            unitId: 1,
+            order: 6,
+            completed: false
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: "Unit 2",
+        description: "Common expressions",
+        courseId: 1,
+        order: 2,
+        lessons: [
+          {
+            id: 7,
+            title: "Food & Drinks",
+            unitId: 2,
+            order: 1,
+            completed: false
+          },
+          {
+            id: 8,
+            title: "Shopping",
+            unitId: 2,
+            order: 2,
+            completed: false
+          },
+          {
+            id: 9,
+            title: "Directions",
+            unitId: 2,
+            order: 3,
+            completed: false
+          },
+          {
+            id: 10,
+            title: "Travel",
+            unitId: 2,
+            order: 4,
+            completed: false
+          },
+          {
+            id: 11,
+            title: "Weather",
+            unitId: 2,
+            order: 5,
+            completed: false
+          },
+          {
+            id: 12,
+            title: "Time & Date",
+            unitId: 2,
+            order: 6,
             completed: false
           }
         ]
