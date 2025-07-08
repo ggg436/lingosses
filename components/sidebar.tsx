@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Loader } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -66,7 +65,23 @@ export const Sidebar = ({ className }: Props) => {
       </div>
       <div className="p-4">
         {loading ? (
-          <Loader className="h-5 w-5 text-muted-foreground animate-spin" />
+          <span className="h-5 w-5 text-muted-foreground animate-spin inline-block">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+          </span>
         ) : (
           <div className="flex items-center gap-2">
             {currentUser && (

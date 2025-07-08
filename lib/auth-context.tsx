@@ -3,14 +3,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User, 
-  onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut as firebaseSignOut,
   GoogleAuthProvider, 
   signInWithPopup 
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { app } from './firebase';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -44,40 +44,59 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState(() => {
+    // Initialize auth only on client side
+    if (typeof window !== 'undefined') {
+      return getAuth(app);
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-      
-      // Set or clear the session cookie based on auth state
-      if (user) {
-        setSessionCookie(user.uid);
-      } else {
-        clearSessionCookie();
-      }
-    });
+    if (!auth) return;
+    
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setCurrentUser(user);
+        setLoading(false);
+        
+        // Set or clear the session cookie based on auth state
+        if (user) {
+          setSessionCookie(user.uid);
+        } else {
+          clearSessionCookie();
+        }
+      });
 
-    return unsubscribe;
-  }, []);
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Auth state change error:", error);
+      setLoading(false);
+      return () => {};
+    }
+  }, [auth]);
 
   const signIn = async (email: string, password: string): Promise<User> => {
+    if (!auth) throw new Error("Auth not initialized");
     const result = await signInWithEmailAndPassword(auth, email, password);
     return result.user;
   };
 
   const signUp = async (email: string, password: string): Promise<User> => {
+    if (!auth) throw new Error("Auth not initialized");
     const result = await createUserWithEmailAndPassword(auth, email, password);
     return result.user;
   };
 
   const signInWithGoogle = async (): Promise<User> => {
+    if (!auth) throw new Error("Auth not initialized");
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     return result.user;
   };
 
   const signOut = async (): Promise<void> => {
+    if (!auth) throw new Error("Auth not initialized");
     clearSessionCookie();
     return firebaseSignOut(auth);
   };
@@ -93,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );
 }; 
