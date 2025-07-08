@@ -1,10 +1,13 @@
-import { cache } from "react";
-import { eq } from "drizzle-orm";
+import { cache } from "@/lib/cache";
+import { eq, and } from "drizzle-orm";
 import { getServerAuth } from "@/lib/server-auth";
+import { auth } from "@/lib/firebase";
+import { redirect } from "next/navigation";
 
 import db from "@/db/drizzle";
 import { 
   challengeProgress,
+  challenges,
   courses, 
   lessons, 
   units, 
@@ -13,65 +16,63 @@ import {
 } from "@/db/schema";
 
 export const getUserProgress = cache(async () => {
-  const { userId } = await getServerAuth();
-
-  if (!userId) {
-    return null;
-  }
-
   try {
-    const data = await db.query.userProgress.findFirst({
-      where: eq(userProgress.userId, userId),
-      with: {
-        activeCourse: true,
-      },
-    });
+    const { userId } = await getServerAuth();
 
-    return data;
+    if (!userId) {
+      return null;
+    }
+
+    try {
+      const data = await db.query.userProgress.findFirst({
+        where: eq(userProgress.userId, userId),
+        with: {
+          activeCourse: true,
+        },
+      });
+
+      return data;
+    } catch (error) {
+      console.error("Error fetching user progress:", error);
+      // Return mock data when the table doesn't exist
+      return {
+        id: 0,
+        userId: userId,
+        userName: "Development User",
+        userImageSrc: "/mascot.svg",
+        points: 0,
+        hearts: 5,
+        activeCourseId: 1, // Default to course ID 1
+        activeCourse: {
+          id: 1,
+          title: "Spanish",
+          imageSrc: "/es.svg"
+        }
+      };
+    }
   } catch (error) {
-    console.error("Error fetching user progress:", error);
-    // Return a default progress object when the table doesn't exist
-    return {
-      id: 0,
-      userId: userId,
-      userName: "Development User",
-      userImageSrc: "/mascot.svg",
-      points: 0,
-      hearts: 5,
-      activeCourseId: 1, // Default to course ID 1
-      activeCourse: {
-        id: 1,
-        title: "Default Course",
-        imageSrc: "/course-1.svg"
-      }
-    };
+    console.error("Server auth error:", error);
+    return null;
   }
 });
 
 export const getUnits = cache(async () => {
-  const { userId } = await getServerAuth();
   const userProgress = await getUserProgress();
 
-  if (!userId || !userProgress?.activeCourseId) {
+  if (!userProgress?.activeCourseId) {
     return [];
   }
 
   try {
     const data = await db.query.units.findMany({
-      orderBy: (units, { asc }) => [asc(units.order)],
       where: eq(units.courseId, userProgress.activeCourseId),
       with: {
         lessons: {
-          orderBy: (lessons, { asc }) => [asc(lessons.order)],
           with: {
             challenges: {
-              orderBy: (challenges, { asc }) => [asc(challenges.order)],
               with: {
                 challengeProgress: {
-                  where: eq(
-                    challengeProgress.userId,
-                    userId,
-                  ),
+                  where: eq(challengeProgress.userId, userProgress.userId),
                 },
               },
             },
@@ -82,19 +83,17 @@ export const getUnits = cache(async () => {
 
     const normalizedData = data.map((unit) => {
       const lessonsWithCompletedStatus = unit.lessons.map((lesson) => {
-        if (
-          lesson.challenges.length === 0
-        ) {
+        if (!lesson.challenges.length) {
           return { ...lesson, completed: false };
         }
 
-        const allCompletedChallenges = lesson.challenges.every((challenge) => {
+        const allCompleted = lesson.challenges.every((challenge) => {
           return challenge.challengeProgress
             && challenge.challengeProgress.length > 0
-            && challenge.challengeProgress.every((progress) => progress.completed);
+            && challenge.challengeProgress.some((progress) => progress.completed);
         });
 
-        return { ...lesson, completed: allCompletedChallenges };
+        return { ...lesson, completed: allCompleted };
       });
 
       return { ...unit, lessons: lessonsWithCompletedStatus };
@@ -103,67 +102,21 @@ export const getUnits = cache(async () => {
     return normalizedData;
   } catch (error) {
     console.error("Error fetching units:", error);
-    // Return mock units data when the table doesn't exist
+    // Return mock units data
     return [
       {
         id: 1,
         title: "Unit 1",
-        description: "Basic phrases and greetings",
-        courseId: userProgress.activeCourseId,
+        description: "Learn the basics",
+        courseId: 1,
         order: 1,
         lessons: [
           {
             id: 1,
-            title: "Basic Greetings",
+            title: "Lesson 1",
             unitId: 1,
             order: 1,
-            completed: false,
-            challenges: [
-              {
-                id: 1,
-                lessonId: 1,
-                type: "SELECT",
-                question: "What does 'Namaste' mean?",
-                order: 1,
-                completed: false,
-                challengeProgress: []
-              }
-            ]
-          },
-          {
-            id: 2,
-            title: "Common Phrases",
-            unitId: 1,
-            order: 2,
-            completed: false,
-            challenges: [
-              {
-                id: 3,
-                lessonId: 2,
-                type: "SELECT",
-                question: "How do you say 'thank you'?",
-                order: 1,
-                completed: false,
-                challengeProgress: []
-              }
-            ]
-          }
-        ]
-      },
-      {
-        id: 2,
-        title: "Unit 2",
-        description: "Numbers and counting",
-        courseId: userProgress.activeCourseId,
-        order: 2,
-        lessons: [
-          {
-            id: 3,
-            title: "Numbers 1-10",
-            unitId: 2,
-            order: 1,
-            completed: false,
-            challenges: []
+            completed: false
           }
         ]
       }
@@ -177,19 +130,17 @@ export const getCourses = cache(async () => {
     return data;
   } catch (error) {
     console.error("Error fetching courses:", error);
-    // Return default courses when the table doesn't exist
+    // Return mock courses data
     return [
       {
         id: 1,
-        title: "Nepali",
-        imageSrc: "/course-1.svg",
-        units: []
+        title: "Spanish",
+        imageSrc: "/es.svg",
       },
       {
         id: 2,
-        title: "Spanish",
-        imageSrc: "/course-2.svg",
-        units: []
+        title: "French",
+        imageSrc: "/fr.svg",
       }
     ];
   }

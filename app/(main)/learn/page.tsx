@@ -16,69 +16,44 @@ import {
 
 import { Unit } from "./unit";
 import { Header } from "./header";
+import { Quiz } from "./quiz";
+import { Units } from "./units";
+
+// Import from db index which re-exports safe queries
+import { getUserProgress, getUnits, getUserSubscription } from "@/db";
 
 const LearnPage = async () => {
-  const userProgressData = getUserProgress();
-  const courseProgressData = getCourseProgress();
-  const lessonPercentageData = getLessonPercentage();
-  const unitsData = getUnits();
-  const userSubscriptionData = getUserSubscription();
+  const userProgressData = await getUserProgress();
+  const units = await getUnits();
+  const userSubscription = await getUserSubscription();
 
-  const [
-    userProgress,
-    units,
-    courseProgress,
-    lessonPercentage,
-    userSubscription,
-  ] = await Promise.all([
-    userProgressData,
-    unitsData,
-    courseProgressData,
-    lessonPercentageData,
-    userSubscriptionData,
-  ]);
-
-  if (!userProgress || !userProgress.activeCourse) {
-    redirect("/courses");
+  if (!userProgressData || !userProgressData.activeCourse) {
+    return redirect("/courses");
   }
 
-  if (!courseProgress) {
-    redirect("/courses");
-  }
-
-  const isPro = !!userSubscription?.isActive;
+  const isPro = !!userSubscription?.stripeCurrentPeriodEnd;
 
   return (
     <div className="flex flex-row-reverse gap-[48px] px-6">
       <StickyWrapper>
         <UserProgress
-          activeCourse={userProgress.activeCourse}
-          hearts={userProgress.hearts}
-          points={userProgress.points}
+          activeCourse={userProgressData.activeCourse}
+          hearts={userProgressData.hearts}
+          points={userProgressData.points}
           hasActiveSubscription={isPro}
         />
         {!isPro && (
           <Promo />
         )}
-        <Quests points={userProgress.points} />
+        <Quests points={userProgressData.points} />
       </StickyWrapper>
       <FeedWrapper>
-        <Header title={userProgress.activeCourse.title} />
-        {units.map((unit) => (
-          <div key={unit.id} className="mb-10">
-            <Unit
-              id={unit.id}
-              order={unit.order}
-              description={unit.description}
-              title={unit.title}
-              lessons={unit.lessons}
-              activeLesson={courseProgress.activeLesson as typeof lessons.$inferSelect & {
-                unit: typeof unitsSchema.$inferSelect;
-              } | undefined}
-              activeLessonPercentage={lessonPercentage}
-            />
-          </div>
-        ))}
+        <Header title={userProgressData.activeCourse.title} />
+        <Quiz />
+        <Units
+          units={units}
+          activeCourse={userProgressData.activeCourse}
+        />
       </FeedWrapper>
     </div>
   );
