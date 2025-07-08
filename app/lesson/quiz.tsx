@@ -9,9 +9,9 @@ import { useAudio, useWindowSize, useMount } from "react-use";
 
 import { reduceHearts } from "@/actions/user-progress";
 import { useHeartsModal } from "@/store/use-hearts-modal";
-import { challengeOptions, challenges, userSubscription } from "@/db/schema";
 import { usePracticeModal } from "@/store/use-practice-modal";
 import { upsertChallengeProgress } from "@/actions/challenge-progress";
+import { LessonChallenge, Subscription } from "@/types";
 
 import { Header } from "./header";
 import { Footer } from "./footer";
@@ -19,17 +19,22 @@ import { Challenge } from "./challenge";
 import { ResultCard } from "./result-card";
 import { QuestionBubble } from "./question-bubble";
 
+// Define more flexible types for challenges and options
+interface ChallengeOption {
+  id: number;
+  challengeId: number;
+  text: string;
+  correct: boolean;
+  imageSrc: string | null;
+  audioSrc?: string | null;
+}
+
 type Props ={
   initialPercentage: number;
   initialHearts: number;
   initialLessonId: number;
-  initialLessonChallenges: (typeof challenges.$inferSelect & {
-    completed: boolean;
-    challengeOptions: typeof challengeOptions.$inferSelect[];
-  })[];
-  userSubscription: typeof userSubscription.$inferSelect & {
-    isActive: boolean;
-  } | null;
+  initialLessonChallenges: LessonChallenge[];
+  userSubscription: Subscription | null;
 };
 
 export const Quiz = ({

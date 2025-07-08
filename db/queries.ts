@@ -1,8 +1,7 @@
 import { cache } from "@/lib/cache";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getServerAuth } from "@/lib/server-auth";
-import { auth } from "@/lib/firebase";
-import { redirect } from "next/navigation";
+
 
 import db from "@/db/drizzle";
 import { 

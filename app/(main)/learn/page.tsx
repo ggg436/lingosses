@@ -1,26 +1,16 @@
 import { redirect } from "next/navigation";
 
-import { Promo } from "@/components/promo";
-import { Quests } from "@/components/quests";
 import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
-import { lessons, units as unitsSchema } from "@/db/schema";
-import { 
-  getCourseProgress, 
-  getLessonPercentage, 
-  getUnits, 
-  getUserProgress,
-  getUserSubscription
-} from "@/db/queries";
-
-import { Unit } from "./unit";
 import { Header } from "./header";
+import { UserProgress } from "@/components/user-progress";
 import { Quiz } from "./quiz";
 import { Units } from "./units";
+import { Promo } from "@/components/promo";
+import { Quests } from "@/components/quests";
 
-// Import from db index which re-exports safe queries
-import { getUserProgress, getUnits, getUserSubscription } from "@/db";
+// Import directly from safe-queries to avoid duplicate exports
+import { getUserProgress, getUnits, getUserSubscription } from "@/db/safe-queries";
 
 const LearnPage = async () => {
   const userProgressData = await getUserProgress();
@@ -58,5 +48,5 @@ const LearnPage = async () => {
     </div>
   );
 };
- 
+
 export default LearnPage;

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { getLesson, getUserProgress, getUserSubscription } from "@/db/queries";
+import { getLesson, getUserProgress, getUserSubscription } from "@/db/safe-queries";
+import { ChallengeOption, LessonChallenge, Subscription } from "@/types";
 
 import { Quiz } from "../quiz";
 
@@ -31,17 +32,44 @@ const LessonIdPage = async ({
     redirect("/learn");
   }
 
-  const initialPercentage = lesson.challenges
+  const typedChallenges: LessonChallenge[] = lesson.challenges.map(challenge => ({
+    ...challenge,
+    type: challenge.type as "SELECT" | "ASSIST",
+    completed: false,
+    challengeOptions: challenge.challengeOptions.map(option => {
+      const typedOption: ChallengeOption = {
+        id: option.id,
+        challengeId: option.challengeId,
+        text: option.text,
+        correct: option.correct,
+        imageSrc: option.imageSrc || null,
+        audioSrc: null
+      };
+      return typedOption;
+    }),
+  }));
+
+  const initialPercentage = typedChallenges
     .filter((challenge) => challenge.completed)
-    .length / lesson.challenges.length * 100;
+    .length / typedChallenges.length * 100;
+
+  const typedSubscription: Subscription | null = userSubscription ? {
+    id: userSubscription.id,
+    userId: userSubscription.userId,
+    stripeCustomerId: userSubscription.stripeCustomerId || "",
+    stripeSubscriptionId: userSubscription.stripeSubscriptionId || "",
+    stripePriceId: userSubscription.stripePriceId || "",
+    stripeCurrentPeriodEnd: userSubscription.stripeCurrentPeriodEnd || new Date(),
+    isActive: !!userSubscription.stripeCurrentPeriodEnd
+  } : null;
 
   return ( 
     <Quiz
       initialLessonId={lesson.id}
-      initialLessonChallenges={lesson.challenges}
+      initialLessonChallenges={typedChallenges}
       initialHearts={userProgress.hearts}
       initialPercentage={initialPercentage}
-      userSubscription={userSubscription}
+      userSubscription={typedSubscription}
     />
   );
 };

@@ -11,12 +11,17 @@ import {
   Timestamp,
   orderBy,
   deleteDoc,
-  addDoc
+  addDoc,
+  getFirestore
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { app } from './firebase';
+
+// Initialize Firestore
+const db = typeof window !== 'undefined' ? getFirestore(app) : null;
 
 // User related operations
 export const createUser = async (userId: string, userData: any) => {
+  if (!db) throw new Error("Firestore not initialized");
   return await setDoc(doc(db, 'users', userId), {
     ...userData,
     createdAt: serverTimestamp(),
@@ -25,6 +30,7 @@ export const createUser = async (userId: string, userData: any) => {
 };
 
 export const updateUser = async (userId: string, userData: any) => {
+  if (!db) throw new Error("Firestore not initialized");
   return await updateDoc(doc(db, 'users', userId), {
     ...userData,
     updatedAt: serverTimestamp()
@@ -32,6 +38,7 @@ export const updateUser = async (userId: string, userData: any) => {
 };
 
 export const getUser = async (userId: string) => {
+  if (!db) throw new Error("Firestore not initialized");
   const docRef = doc(db, 'users', userId);
   const docSnap = await getDoc(docRef);
   
@@ -44,6 +51,7 @@ export const getUser = async (userId: string) => {
 
 // Course related operations
 export const getCourses = async () => {
+  if (!db) throw new Error("Firestore not initialized");
   const coursesRef = collection(db, 'courses');
   const q = query(coursesRef);
   
@@ -55,6 +63,7 @@ export const getCourses = async () => {
 };
 
 export const getCourse = async (courseId: string) => {
+  if (!db) throw new Error("Firestore not initialized");
   const docRef = doc(db, 'courses', courseId);
   const docSnap = await getDoc(docRef);
   
@@ -67,6 +76,7 @@ export const getCourse = async (courseId: string) => {
 
 // User progress operations
 export const getUserProgress = async (userId: string, courseId: string) => {
+  if (!db) throw new Error("Firestore not initialized");
   const progressRef = collection(db, 'progress');
   const q = query(
     progressRef, 
@@ -82,6 +92,7 @@ export const getUserProgress = async (userId: string, courseId: string) => {
 };
 
 export const updateUserProgress = async (progressId: string, progressData: any) => {
+  if (!db) throw new Error("Firestore not initialized");
   return await updateDoc(doc(db, 'progress', progressId), {
     ...progressData,
     updatedAt: serverTimestamp()
@@ -89,6 +100,7 @@ export const updateUserProgress = async (progressId: string, progressData: any) 
 };
 
 export const createUserProgress = async (progressData: any) => {
+  if (!db) throw new Error("Firestore not initialized");
   return await addDoc(collection(db, 'progress'), {
     ...progressData,
     createdAt: serverTimestamp(),
