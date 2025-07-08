@@ -74,14 +74,13 @@ export const Sidebar = ({ className }: Props) => {
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
                   {currentUser.displayName ? currentUser.displayName[0] : currentUser.email?.[0] || "U"}
                 </div>
-                <Button 
+                <button 
                   onClick={handleSignOut}
-                  variant="ghost"
+                  className="text-sm bg-transparent text-slate-500 border-transparent border-0 hover:bg-slate-100 disabled:opacity-50"
                   disabled={isSigningOut}
-                  className="text-sm"
                 >
                   {isSigningOut ? "Signing out..." : "Sign out"}
-                </Button>
+                </button>
               </>
             )}
           </div>
