@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { LanguageSelector } from "@/components/language-selector";
 
 export const Header = () => {
   const { currentUser, loading, signOut } = useAuth();
@@ -31,33 +32,35 @@ export const Header = () => {
             Lingo
           </h1>
         </div>
-        {loading ? (
-          <Loader className="h-5 w-5 text-muted-foreground animate-spin" />
-        ) : (
-          <>
-            {currentUser ? (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                  {currentUser.displayName ? currentUser.displayName[0] : currentUser.email?.[0] || "U"}
+        <div className="flex items-center gap-x-4">
+          <LanguageSelector />
+          {loading ? (
+            <Loader className="h-5 w-5 text-muted-foreground animate-spin" />
+          ) : (
+            <>
+              {currentUser ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+                    {currentUser.displayName ? currentUser.displayName[0] : currentUser.email?.[0] || "U"}
+                  </div>
+                  <Button 
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    disabled={isSigningOut}
+                  >
+                    {isSigningOut ? "Signing out..." : "Sign out"}
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleSignOut}
-                  variant="ghost"
-                  disabled={isSigningOut}
-                  size="lg"
-                >
-                  {isSigningOut ? "Signing out..." : "Sign out"}
+              ) : (
+                <Button variant="ghost" asChild>
+                  <Link href="/login">
+                    Login
+                  </Link>
                 </Button>
-              </div>
-            ) : (
-              <Button size="lg" variant="ghost" asChild>
-                <Link href="/login">
-                  Login
-                </Link>
-              </Button>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

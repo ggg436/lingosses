@@ -5,6 +5,7 @@ import { Loader } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { LanguageSelector } from "@/components/language-selector";
 
 export default function Home() {
   const { currentUser, loading } = useAuth();
@@ -43,6 +44,9 @@ export default function Home() {
                   </Link>
                 </Button>
               )}
+              <div className="mt-4 flex items-center justify-center">
+                <LanguageSelector />
+              </div>
             </>
           )}
         </div>
